@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spam Keylogger By BOT-PINO</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body {
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #12000b, #2a0017);
+    color: white;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  h2 {
+    text-align: center;
+    margin: 15px 0;
+    font-size: 1.5rem;
+    color: #ff0033;
+  }
+  .container {
+    width: 95%;
+    max-width: 600px;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 20px;
+    margin: auto;
+    border-radius: 15px;
+    box-shadow: 0 0 15px #ff0033;
+  }
+  textarea, input {
+    width: 100%;
+    background: #1c1c1c;
+    border: 1px solid #ff0033;
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 5px 0;
+    outline: none;
+  }
+  .tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: #1a0009;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 10px;
+    margin: 2px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .tab-btn.active {
+    background: #ff0033;
+    box-shadow: 0 0 10px #ff0033;
+  }
+  .tab-content {
+    display: none;
+  }
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  button {
+    flex: 1;
+    padding: 10px;
+    margin: 5px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    background: #ff0033;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:disabled {
+    background: #550011;
+    cursor: not-allowed;
+  }
+  button:hover:not(:disabled) {
+    background: #cc0029;
+  }
+  #log {
+    width: 100%;
+    height: 180px;
+    background: #0d0d0d;
+    border: 1px solid #ff0033;
+    border-radius: 10px;
+    color: #ffcccc;
+    padding: 10px;
+    overflow-y: auto;
+    margin-top: 15px;
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<h2 id="titleApp"><i class="fa-solid fa-robot" style="color: cyan;"></i> Spam Keylogger By BOT-PINO</h2>
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('spam')"><i class="fa-solid fa-bomb"></i> Spam</button>
+    <button class="tab-btn" onclick="showTab('status')"><i class="fa-solid fa-signal"></i> Status</button>
+    <button class="tab-btn" onclick="showTab('delete')"><i class="fa-solid fa-trash"></i> Delete</button>
+    <button class="tab-btn" onclick="showTab('clear')"><i class="fa-solid fa-broom"></i> Clear Logs</button>
+  </div>
+
+  <div id="tab-spam" class="tab-content" style="display:block;">
+    <label><i class="fa-solid fa-link"></i> Webhook URL:</label>
+    <input type="text" id="webhook" placeholder="Masukkan URL webhook">
+    <label><i class="fa-solid fa-comment-dots"></i> Pesan:</label>
+    <textarea id="message" placeholder="Masukkan pesan spam"></textarea>
+    <div class="buttons">
+      <button onclick="startSpam()"><i class="fa-solid fa-play"></i> Start</button>
+      <button onclick="stopSpam()" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+    </div>
+  </div>
+
+  <div id="tab-status" class="tab-content">
+    <p><i class="fa-solid fa-info-circle"></i> Cek status webhook dan respon server.</p>
+    <button onclick="checkStatus()"><i class="fa-solid fa-satellite-dish"></i> Cek Status Webhook</button>
+  </div>
+
+  <div id="tab-delete" class="tab-content">
+    <p><i class="fa-solid fa-trash-can"></i> Hapus webhook yang sudah tidak digunakan.</p>
+    <button onclick="deleteWebhook()"><i class="fa-solid fa-skull-crossbones"></i> Hapus Webhook</button>
+  </div>
+
+  <div id="tab-clear" class="tab-content">
+    <p><i class="fa-solid fa-broom"></i> Bersihkan seluruh log di bawah ini.</p>
+    <button onclick="clearLog()"><i class="fa-solid fa-trash"></i> Clear All Logs</button>
+  </div>
+
+  <textarea id="log" readonly>[LOG] Menunggu aksi pengguna...</textarea>
+</div>
+
+<script>
+let spamInterval = null;
+let spamActive = false;
+const delay = 50;
+const creator = "BOT-PINO"; // Nama pembuat dikunci
+
+function showTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+  document.getElementById(`tab-${tabName}`).style.display = 'block';
+  log(`[INFO] Tab '${tabName}' dibuka.`);
+}
+
+function log(text) {
+  const logBox = document.getElementById("log");
+  logBox.value += `[LOG] ${text}\n`;
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+async function sendSpam() {
+  const url = document.getElementById("webhook").value.trim();
+  const msg = document.getElementById("message").value.trim();
+  if (!url || !msg) return log("[ERROR] Isi webhook & pesan terlebih dahulu.");
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username: creator, content: msg})
+    });
+    log(`[SPAM] ${creator}: ${msg}`);
+  } catch {
+    log("[ERROR] Gagal mengirim spam ke webhook.");
+  }
+}
+
+function startSpam() {
+  const url = document.getElementById("webhook").value.trim();
+  const msg = document.getElementById("message").value.trim();
+  const startBtn = document.querySelector("button[onclick='startSpam()']");
+  const stopBtn = document.querySelector("button[onclick='stopSpam()']");
+
+  if (!url || !msg) return log("[WARNING] Harap isi webhook dan pesan dulu!");
+  if (spamActive) return log("[INFO] Spam sudah aktif!");
+
+  spamActive = true;
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+
+  spamInterval = setInterval(sendSpam, delay);
+  log(`[INFO] Spam dimulai oleh ${creator} dengan delay ${delay}ms`);
+}
+
+function stopSpam() {
+  if (!spamActive) return log("[INFO] Spam belum aktif!");
+  clearInterval(spamInterval);
+  spamInterval = null;
+  spamActive = false;
+
+  const startBtn = document.querySelector("button[onclick='startSpam()']");
+  const stopBtn = document.querySelector("button[onclick='stopSpam()']");
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+
+  log(`[INFO] Spam dihentikan oleh ${creator}`);
+}
+
+async function checkStatus() {
+  const url = document.getElementById("webhook").value.trim();
+  if (!url) return log("[ERROR] Masukkan URL webhook terlebih dahulu.");
+  try {
+    const res = await fetch(url);
+    if (res.ok) log("[STATUS] Webhook aktif dan bisa digunakan.");
+    else log("[STATUS] Webhook tidak valid / tidak aktif.");
+  } catch {
+    log("[ERROR] Gagal mengecek status webhook.");
+  }
+}
+
+async function deleteWebhook() {
+  const url = document.getElementById("webhook").value.trim();
+  if (!url) return log("[ERROR] Masukkan URL webhook dulu!");
+  try {
+    await fetch(url, { method: "DELETE" });
+    log("[DELETE] Webhook berhasil dihapus.");
+  } catch {
+    log("[ERROR] Gagal menghapus webhook.");
+  }
+}
+
+function clearLog() {
+  document.getElementById("log").value = "[LOG] Log dibersihkan oleh BOT-PINO.\n";
+}
+</script>
+</body>
+</html>
